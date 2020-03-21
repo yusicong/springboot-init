@@ -8,11 +8,17 @@ import com.cocacola.yusicong.alllearning.domain.dto.UserQueryDTO;
 import com.cocacola.yusicong.alllearning.domain.vo.UserVO;
 import com.cocacola.yusicong.alllearning.exception.ErrorCodeEnum;
 import com.cocacola.yusicong.alllearning.service.UserService;
+import com.cocacola.yusicong.alllearning.util.InsertValidationGroup;
+import com.cocacola.yusicong.alllearning.util.UpdateValidationGroup;
+import com.cocacola.yusicong.alllearning.util.ValidatorUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.util.StringUtils;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.constraints.NotNull;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -28,6 +34,7 @@ import java.util.stream.Stream;
 @RestController
 @RequestMapping("api/users")
 @Slf4j
+@Validated//基础类型校验开启
 public class UserController {
 
     @Autowired
@@ -39,8 +46,8 @@ public class UserController {
      * @param userDTO 用户信息实体
      * @return 更新结果
      */
-    @PostMapping()
-    public ResponseResult<String> save(@RequestBody UserDTO userDTO) {
+    @PostMapping("/save")
+    public ResponseResult<String> save(@Validated(InsertValidationGroup.class) @RequestBody UserDTO userDTO) {
         int save = userService.save(userDTO);
         if (save == 1) {
             return ResponseResult.success("新增成功!");
@@ -56,8 +63,8 @@ public class UserController {
      * @param userDTO 用户信息实体
      * @return 跟心结果
      */
-    @PutMapping("/{id}")
-    public ResponseResult<String> update(@PathVariable("id") Long id, @RequestBody UserDTO userDTO) {
+    @PutMapping("/update/{id}")
+    public ResponseResult<String> update(@NotNull @PathVariable("id") Long id, @Validated(UpdateValidationGroup.class) @RequestBody UserDTO userDTO) {
         int update = userService.update(id, userDTO);
         if (update == 1) {
             return ResponseResult.success("更新成功");
@@ -66,8 +73,8 @@ public class UserController {
         }
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseResult<String> delete(@PathVariable("id") Long id) {
+    @DeleteMapping("/delete/{id}")
+    public ResponseResult<String> delete(@NotNull(message = "用户id不可为空") @PathVariable("id") Long id) {
         int delete = userService.delete(id);
         if (delete == 1) {
             return ResponseResult.success("删除成功！");
@@ -76,15 +83,16 @@ public class UserController {
         }
     }
 
-    @GetMapping
-    public ResponseResult<PageResult> quert(Integer pageNo, Integer pageSize, UserQueryDTO userQueryDTO) {
+    @GetMapping("/query")
+    public ResponseResult query(@NotNull Integer pageNo, @NotNull Integer pageSize, @Validated UserQueryDTO userQueryDTO) {
 
         PageQuery<UserQueryDTO> pageQuery = new PageQuery<>();
         pageQuery.setPageNo(pageNo);
         pageQuery.setPageSize(pageSize);
         pageQuery.setQuery(userQueryDTO);
         PageResult<List<UserDTO>> pageResult = userService.query(pageQuery);
-
+        //加入手动校验功能
+        ValidatorUtils.validate(pageQuery);
 
         List<UserVO> userVOList = Optional.ofNullable(pageResult.getData())
                 .map(List::stream)
@@ -93,7 +101,9 @@ public class UserController {
                     UserVO userVO = new UserVO();
                     BeanUtils.copyProperties(userDTO, userVO);
                     userVO.setPassword("*******");
-                    userVO.setPhone(userDTO.getPhone().replaceAll("(\\d{3})(\\d{4})(\\d{4})", "$1****$3"));
+                    if (!StringUtils.isEmpty(userDTO.getPhone())) {
+                        userVO.setPhone(userDTO.getPhone().replaceAll("(\\d{3})(\\d{4})(\\d{4})", "$1****$3"));
+                    }
                     return userVO;
                 }).collect(Collectors.toList());
 
