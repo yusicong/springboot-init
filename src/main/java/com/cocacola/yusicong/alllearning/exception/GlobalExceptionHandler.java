@@ -2,6 +2,7 @@ package com.cocacola.yusicong.alllearning.exception;
 
 import com.cocacola.yusicong.alllearning.domain.common.ResponseResult;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -47,8 +48,11 @@ public class GlobalExceptionHandler {
 
     @ResponseBody
     @ExceptionHandler(value = Throwable.class)
-    public ResponseResult throwableHandle(Throwable throwable) {
-        log.error("捕捉Throwable异常：", throwable);
-        return ResponseResult.failure(ErrorCodeEnum.SYSTEM_ERROR.getCode(), throwable.getMessage());
+    public ResponseResult throwableHandle(Throwable th) {
+        log.error("捕捉Throwable异常：", th);
+        return ResponseResult.failure(ErrorCodeEnum.SYSTEM_ERROR.getCode(), th.getMessage());
     }
+
+
+
 }

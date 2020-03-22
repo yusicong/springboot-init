@@ -14,6 +14,8 @@ import com.cocacola.yusicong.alllearning.util.ValidatorUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -46,6 +48,7 @@ public class UserController {
      * @param userDTO 用户信息实体
      * @return 更新结果
      */
+    @CacheEvict(cacheNames = "users-cache", allEntries = true)//当有该操作是清空对应cacheNames下所有缓存
     @PostMapping("/save")
     public ResponseResult<String> save(@Validated(InsertValidationGroup.class) @RequestBody UserDTO userDTO) {
         int save = userService.save(userDTO);
@@ -83,9 +86,12 @@ public class UserController {
         }
     }
 
+    //把入参进行hash作为key值把返回作为value存入缓存中
+    @Cacheable(cacheNames = "users-cache")
     @GetMapping("/query")
     public ResponseResult query(@NotNull Integer pageNo, @NotNull Integer pageSize, @Validated UserQueryDTO userQueryDTO) {
 
+        log.info("未使用缓存！");
         PageQuery<UserQueryDTO> pageQuery = new PageQuery<>();
         pageQuery.setPageNo(pageNo);
         pageQuery.setPageSize(pageSize);
