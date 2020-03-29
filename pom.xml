@@ -19,6 +19,12 @@
     </properties>
 
     <dependencies>
+        <!-- Guava支持-->
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>28.0-jre</version>
+        </dependency>
 
         <dependency>
             <groupId>org.springframework</groupId>
